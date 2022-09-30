@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -e
+
+EXCLUDE_ATTACHMENTS=false
+EXCLUDE_RELEASES=false
+EXCLUDE_OWNER_PROJECTS=false
+LOCK_REPOSITORIES=false
+REPOSITORIES=
+
+__USAGE="
+Bulk exports a list of Git repositories from an organization
+
+USAGE
+  $(basename $0) [options] <organization> <repo> ...
+
+FLAGS
+  -d, --debug                         Enable debugging
+      --exclude-attachments           Indicates attachments should be excluded from the migration
+      --exclude-releases              Indicates releases should be excluded from the migration
+      --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
+      --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
+";
+
+die() {
+  printf "\nError: %s\n" "$1"
+  echo "$__USAGE"
+  exit 1
+}
+
+if ! type -p gh > /dev/null; then
+	die "'gh' could not be found"
+fi
+
+if ! type -p jq > /dev/null; then
+	die "'jq' could not be found"
+fi
+
+while getopts "adh-:" OPT; do
+  if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
+    OPT="${OPTARG%%=*}"       # extract long option name
+    OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
+    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+  fi
+
+  case "$OPT" in
+    debug | d)
+      set -x
+      ;;
+
+    exclude-attachments)
+      EXCLUDE_ATTACHMENTS=true
+      ;;
+
+    exclude-owner-projects)
+      EXCLUDE_OWNER_PROJECTS=true
+      ;;
+
+    exclude-releases)
+      EXCLUDE_RELEASES=true
+      ;;
+
+    help | h)
+      echo "$__USAGE"
+      exit 0
+      ;;
+
+    lock-repositories)
+      LOCK_REPOSITORIES=true
+      ;;
+  esac
+done
+
+# shift so that $@, $1, etc. refer to the non-option arguments
+shift "$((OPTIND-1))"
+
+if test "$#" -lt 2; then
+  die "Must provide organization and 1+ repositories"
+fi
+
+ORGANIZATION="$1"
+REPOSITORIES=${@:2}
+
+# Start migration of specified GitHub repositories
+# https://docs.github.com/en/rest/reference/migrations#start-an-organization-migration
+printf "Start migration for repositories: %s\n" "$REPOSITORIES"
+
+MIGRATION_JQ='{
+  "lock_repositories": $lock_repositories,
+  "exclude_attachments": $exclude_attachments,
+  "exclude_owner_projects": $exclude_owner_projects,
+  "exclude_releases": $exclude_releases,
+  "repositories": $ARGS.positional,
+}'
+
+MIGRATION_INPUTS=$(
+  jq -n "$MIGRATION_JQ" \
+    --argjson exclude_attachments $EXCLUDE_ATTACHMENTS \
+    --argjson exclude_owner_projects $EXCLUDE_OWNER_PROJECTS \
+    --argjson exclude_releases $EXCLUDE_RELEASES \
+    --argjson lock_repositories $LOCK_REPOSITORIES \
+    --args $REPOSITORIES)
+
+MIGRATION_ID=$(echo "$MIGRATION_INPUTS" | gh api /orgs/$ORGANIZATION/migrations -X POST -p wyandotte --input - --jq '.id')
+
+# Send request to the migration starts endpoint to monitor the status of the export
+# https://docs.github.com/en/rest/reference/migrations#get-an-organization-migration-status
+
+while true; do
+  MIGRATION_STATE=$(gh api /orgs/$ORGANIZATION/migrations/$MIGRATION_ID -p wyandotte --jq '.state')
+  printf "Monitoring migration %s state:  %s\n" $MIGRATION_ID $MIGRATION_STATE
+
+  if [[ "${MIGRATION_STATE}" == "exported" ]]; then
+    break;
+  fi
+
+  sleep 15
+done
+
+# Download the exported archive
+# https://docs.github.com/en/rest/reference/migrations#download-an-organization-migration-archive
+MIGRATION_FILE="migration_archive-$MIGRATION_ID.tar.gz"
+printf "Downloading migration %s archive to %s\n" $MIGRATION_ID $MIGRATION_FILE
+gh api /orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive -p wyandotte > $MIGRATION_FILE
