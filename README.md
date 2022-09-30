@@ -1,3 +1,13 @@
+```shell
+$ gh repo-export tinyfists test-1 test-2 test-3
+Start migration for repositories: test-1 test-2 test-3
+Monitoring migration 1704841 state:  exporting
+Monitoring migration 1704841 state:  exporting
+Monitoring migration 1704841 state:  exporting
+Monitoring migration 1704841 state:  exported
+Downloading migration 1704841 archive to migration_archive-1704841.tar.gz
+```
+
 # gh-repo-export
 
 A `gh` extension to generate [GitHub repository migrations](https://docs.github.com/en/enterprise-cloud@latest/rest/migrations/orgs).
