@@ -12,7 +12,7 @@ A `gh` extension to generate GitHub repository migrations.
 ## Usage
 
 ```shell
-$ ./gh-repo-export --help
+$ gh repo-export --help
 
 Bulk exports a list of Git repositories from an organization
 
