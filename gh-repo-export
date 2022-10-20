@@ -18,6 +18,7 @@ FLAGS
       --exclude-attachments           Indicates attachments should be excluded from the migration
       --exclude-releases              Indicates releases should be excluded from the migration
       --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
+      --hostname=string               Hostname of the GitHub instance to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
 ";
 
@@ -35,7 +36,7 @@ if ! type -p jq > /dev/null; then
 	die "'jq' could not be found"
 fi
 
-while getopts "adh-:" OPT; do
+while getopts "dh-:" OPT; do
   if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
     OPT="${OPTARG%%=*}"       # extract long option name
     OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -62,6 +63,10 @@ while getopts "adh-:" OPT; do
     help | h)
       echo "$__USAGE"
       exit 0
+      ;;
+
+    hostname)
+      export GH_HOST="${OPTARG}"
       ;;
 
     lock-repositories)
