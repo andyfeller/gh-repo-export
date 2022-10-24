@@ -4,6 +4,8 @@ set -e
 EXCLUDE_ATTACHMENTS=false
 EXCLUDE_RELEASES=false
 EXCLUDE_OWNER_PROJECTS=false
+EXCLUDE_METADATA=false
+EXCLUDE_GIT_DATA=false
 LOCK_REPOSITORIES=false
 REPOSITORIES=
 
@@ -11,14 +13,17 @@ __USAGE="
 Bulk exports a list of Git repositories from an organization
 
 USAGE
-  $(basename $0) [options] <organization> <repo> ...
+  $(basename $0) [options] <organization> <repo1> <repo2> ...
 
 FLAGS
   -d, --debug                         Enable debugging
       --exclude-attachments           Indicates attachments should be excluded from the migration
       --exclude-releases              Indicates releases should be excluded from the migration
       --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
+      --exclude-metadata              Indicates metadata should be excluded from the migration
+      --exclude-git-data              Indicates git data should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
+      --pat=string                    PAT to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
 ";
 
@@ -60,6 +65,14 @@ while getopts "dh-:" OPT; do
       EXCLUDE_RELEASES=true
       ;;
 
+    exclude-metadata)
+      EXCLUDE_METADATA=true
+      ;;
+
+    exclude-git-data)
+      EXCLUDE_GIT_DATA=true
+      ;;
+
     help | h)
       echo "$__USAGE"
       exit 0
@@ -67,6 +80,10 @@ while getopts "dh-:" OPT; do
 
     hostname)
       export GH_HOST="${OPTARG}"
+      ;;
+
+    pat)
+      export GH_TOKEN="${OPTARG}"
       ;;
 
     lock-repositories)
@@ -94,6 +111,8 @@ MIGRATION_JQ='{
   "exclude_attachments": $exclude_attachments,
   "exclude_owner_projects": $exclude_owner_projects,
   "exclude_releases": $exclude_releases,
+  "exclude_metadata": $exclude_metadata,
+  "exclude_git_data": $exclude_git_data,
   "repositories": $ARGS.positional,
 }'
 
@@ -102,6 +121,8 @@ MIGRATION_INPUTS=$(
     --argjson exclude_attachments $EXCLUDE_ATTACHMENTS \
     --argjson exclude_owner_projects $EXCLUDE_OWNER_PROJECTS \
     --argjson exclude_releases $EXCLUDE_RELEASES \
+    --argjson exclude_metadata $EXCLUDE_METADATA \
+    --argjson exclude_git_data $EXCLUDE_GIT_DATA \
     --argjson lock_repositories $LOCK_REPOSITORIES \
     --args $REPOSITORIES)
 
