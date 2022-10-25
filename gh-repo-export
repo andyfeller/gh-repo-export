@@ -138,6 +138,10 @@ while true; do
   if [[ "${MIGRATION_STATE}" == "exported" ]]; then
     break;
   fi
+  
+  if [[ "${MIGRATION_STATE}" == "failed" ]]; then
+    exit 1
+  fi
 
   sleep 15
 done
