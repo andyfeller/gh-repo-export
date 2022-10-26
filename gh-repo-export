@@ -18,12 +18,11 @@ USAGE
 FLAGS
   -d, --debug                         Enable debugging
       --exclude-attachments           Indicates attachments should be excluded from the migration
-      --exclude-releases              Indicates releases should be excluded from the migration
-      --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
-      --exclude-metadata              Indicates metadata should be excluded from the migration
       --exclude-git-data              Indicates git data should be excluded from the migration
+      --exclude-metadata              Indicates metadata should be excluded from the migration
+      --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
+      --exclude-releases              Indicates releases should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
-      --pat=string                    PAT to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
 ";
 
@@ -57,20 +56,20 @@ while getopts "dh-:" OPT; do
       EXCLUDE_ATTACHMENTS=true
       ;;
 
-    exclude-owner-projects)
-      EXCLUDE_OWNER_PROJECTS=true
-      ;;
-
-    exclude-releases)
-      EXCLUDE_RELEASES=true
+    exclude-git-data)
+      EXCLUDE_GIT_DATA=true
       ;;
 
     exclude-metadata)
       EXCLUDE_METADATA=true
       ;;
 
-    exclude-git-data)
-      EXCLUDE_GIT_DATA=true
+    exclude-owner-projects)
+      EXCLUDE_OWNER_PROJECTS=true
+      ;;
+
+    exclude-releases)
+      EXCLUDE_RELEASES=true
       ;;
 
     help | h)
@@ -80,10 +79,6 @@ while getopts "dh-:" OPT; do
 
     hostname)
       export GH_HOST="${OPTARG}"
-      ;;
-
-    pat)
-      export GH_TOKEN="${OPTARG}"
       ;;
 
     lock-repositories)
@@ -109,20 +104,20 @@ printf "Start migration for repositories: %s\n" "$REPOSITORIES"
 MIGRATION_JQ='{
   "lock_repositories": $lock_repositories,
   "exclude_attachments": $exclude_attachments,
+  "exclude_git_data": $exclude_git_data,
+  "exclude_metadata": $exclude_metadata,
   "exclude_owner_projects": $exclude_owner_projects,
   "exclude_releases": $exclude_releases,
-  "exclude_metadata": $exclude_metadata,
-  "exclude_git_data": $exclude_git_data,
   "repositories": $ARGS.positional,
 }'
 
 MIGRATION_INPUTS=$(
   jq -n "$MIGRATION_JQ" \
     --argjson exclude_attachments $EXCLUDE_ATTACHMENTS \
+    --argjson exclude_git_data $EXCLUDE_GIT_DATA \
+    --argjson exclude_metadata $EXCLUDE_METADATA \
     --argjson exclude_owner_projects $EXCLUDE_OWNER_PROJECTS \
     --argjson exclude_releases $EXCLUDE_RELEASES \
-    --argjson exclude_metadata $EXCLUDE_METADATA \
-    --argjson exclude_git_data $EXCLUDE_GIT_DATA \
     --argjson lock_repositories $LOCK_REPOSITORIES \
     --args $REPOSITORIES)
 
