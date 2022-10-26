@@ -4,6 +4,8 @@ set -e
 EXCLUDE_ATTACHMENTS=false
 EXCLUDE_RELEASES=false
 EXCLUDE_OWNER_PROJECTS=false
+EXCLUDE_METADATA=false
+EXCLUDE_GIT_DATA=false
 LOCK_REPOSITORIES=false
 REPOSITORIES=
 
@@ -11,13 +13,15 @@ __USAGE="
 Bulk exports a list of Git repositories from an organization
 
 USAGE
-  $(basename $0) [options] <organization> <repo> ...
+  $(basename $0) [options] <organization> <repo1> <repo2> ...
 
 FLAGS
   -d, --debug                         Enable debugging
       --exclude-attachments           Indicates attachments should be excluded from the migration
-      --exclude-releases              Indicates releases should be excluded from the migration
+      --exclude-git-data              Indicates git data should be excluded from the migration
+      --exclude-metadata              Indicates metadata should be excluded from the migration
       --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
+      --exclude-releases              Indicates releases should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
 ";
@@ -50,6 +54,14 @@ while getopts "dh-:" OPT; do
 
     exclude-attachments)
       EXCLUDE_ATTACHMENTS=true
+      ;;
+
+    exclude-git-data)
+      EXCLUDE_GIT_DATA=true
+      ;;
+
+    exclude-metadata)
+      EXCLUDE_METADATA=true
       ;;
 
     exclude-owner-projects)
@@ -92,6 +104,8 @@ printf "Start migration for repositories: %s\n" "$REPOSITORIES"
 MIGRATION_JQ='{
   "lock_repositories": $lock_repositories,
   "exclude_attachments": $exclude_attachments,
+  "exclude_git_data": $exclude_git_data,
+  "exclude_metadata": $exclude_metadata,
   "exclude_owner_projects": $exclude_owner_projects,
   "exclude_releases": $exclude_releases,
   "repositories": $ARGS.positional,
@@ -100,6 +114,8 @@ MIGRATION_JQ='{
 MIGRATION_INPUTS=$(
   jq -n "$MIGRATION_JQ" \
     --argjson exclude_attachments $EXCLUDE_ATTACHMENTS \
+    --argjson exclude_git_data $EXCLUDE_GIT_DATA \
+    --argjson exclude_metadata $EXCLUDE_METADATA \
     --argjson exclude_owner_projects $EXCLUDE_OWNER_PROJECTS \
     --argjson exclude_releases $EXCLUDE_RELEASES \
     --argjson lock_repositories $LOCK_REPOSITORIES \
@@ -116,6 +132,10 @@ while true; do
 
   if [[ "${MIGRATION_STATE}" == "exported" ]]; then
     break;
+  fi
+  
+  if [[ "${MIGRATION_STATE}" == "failed" ]]; then
+    exit 1
   fi
 
   sleep 15
