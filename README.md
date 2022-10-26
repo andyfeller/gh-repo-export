@@ -32,10 +32,10 @@ USAGE
 FLAGS
   -d, --debug                         Enable debugging
       --exclude-attachments           Indicates attachments should be excluded from the migration
-      --exclude-releases              Indicates releases should be excluded from the migration
-      --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
-      --exclude-metadata              Indicates metadata should be excluded from the migration
       --exclude-git-data              Indicates git data should be excluded from the migration
+      --exclude-metadata              Indicates metadata should be excluded from the migration
+      --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
+      --exclude-releases              Indicates releases should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
       --pat=string                    PAT to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
