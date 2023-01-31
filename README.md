@@ -21,6 +21,9 @@ A `gh` extension to generate [GitHub repository migrations](https://docs.github.
 
 ## Usage
 
+> **Note**
+> `gh-repo-export` requires the use of coarse-grained v1 PAT token with `repo` and `admin:org` scopes.
+
 ```shell
 $ gh repo-export --help
 
