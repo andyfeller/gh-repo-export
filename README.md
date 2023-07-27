@@ -33,6 +33,7 @@ USAGE
   gh-repo-export [options] <organization> <repo1> <repo2> ...
 
 FLAGS
+      --archive=string                Archive file (don't include the .tar.gz extension) (default: migration_archive-<migration_id>.tar.gz)
   -d, --debug                         Enable debugging
       --exclude-attachments           Indicates attachments should be excluded from the migration
       --exclude-git-data              Indicates git data should be excluded from the migration
@@ -40,9 +41,7 @@ FLAGS
       --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
       --exclude-releases              Indicates releases should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
-      --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
-      --archive=string                Archive file (don't include the .tar.gz extension) (default: migration_archive-<migration_id>.tar.gz)
-      
+      --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data      
 ```
 
 ## Setup
