@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+ARCHIVE=
 EXCLUDE_ATTACHMENTS=false
 EXCLUDE_RELEASES=false
 EXCLUDE_OWNER_PROJECTS=false
@@ -16,6 +17,7 @@ USAGE
   $(basename $0) [options] <organization> <repo1> <repo2> ...
 
 FLAGS
+      --archive=string                Archive file (don't include the .tar.gz extension) (default: migration_archive-<migration_id>.tar.gz)
   -d, --debug                         Enable debugging
       --exclude-attachments           Indicates attachments should be excluded from the migration
       --exclude-git-data              Indicates git data should be excluded from the migration
@@ -24,7 +26,6 @@ FLAGS
       --exclude-releases              Indicates releases should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
-      --archive=string                Archive file (don't include the .tar.gz extension) (default: migration_archive-<migration_id>.tar.gz)
 ";
 
 die() {
@@ -49,6 +50,10 @@ while getopts "dh-:" OPT; do
   fi
 
   case "$OPT" in
+    archive)
+      ARCHIVE="${OPTARG}"
+      ;;
+
     debug | d)
       set -x
       ;;
@@ -84,9 +89,6 @@ while getopts "dh-:" OPT; do
 
     lock-repositories)
       LOCK_REPOSITORIES=true
-      ;;
-    archive)
-      ARCHIVE="${OPTARG}"
       ;;
   esac
 done
