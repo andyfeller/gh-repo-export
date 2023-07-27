@@ -24,6 +24,7 @@ FLAGS
       --exclude-releases              Indicates releases should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
+      --archive=string                Archive file (don't include the .tar.gz extension) (default: migration_archive-<migration_id>.tar.gz)
 ";
 
 die() {
@@ -84,6 +85,9 @@ while getopts "dh-:" OPT; do
     lock-repositories)
       LOCK_REPOSITORIES=true
       ;;
+    archive)
+      ARCHIVE="${OPTARG}"
+      ;;
   esac
 done
 
@@ -143,6 +147,6 @@ done
 
 # Download the exported archive
 # https://docs.github.com/en/rest/reference/migrations#download-an-organization-migration-archive
-MIGRATION_FILE="migration_archive-$MIGRATION_ID.tar.gz"
+MIGRATION_FILE=${ARCHIVE:-migration_archive-$MIGRATION_ID}.tar.gz
 printf "Downloading migration %s archive to %s\n" $MIGRATION_ID $MIGRATION_FILE
 gh api /orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive -p wyandotte > $MIGRATION_FILE
