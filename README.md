@@ -41,6 +41,8 @@ FLAGS
       --exclude-releases              Indicates releases should be excluded from the migration
       --hostname=string               Hostname of the GitHub instance to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
+      --archive=string                Archive file (don't include the .tar.gz extension) (default: migration_archive-<migration_id>.tar.gz)
+      
 ```
 
 ## Setup
