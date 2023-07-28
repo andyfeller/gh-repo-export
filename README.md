@@ -1,16 +1,6 @@
-```shell
-$ gh repo-export tinyfists test-1 test-2 test-3
-Start migration for repositories: test-1 test-2 test-3
-Monitoring migration 1704841 state:  exporting
-Monitoring migration 1704841 state:  exporting
-Monitoring migration 1704841 state:  exporting
-Monitoring migration 1704841 state:  exported
-Downloading migration 1704841 archive to migration_archive-1704841.tar.gz
-```
-
 # gh-repo-export
 
-A `gh` extension to generate [GitHub repository migrations](https://docs.github.com/en/enterprise-cloud@latest/rest/migrations/orgs).
+A `gh` extension to generate [GitHub organization repository migrations](https://docs.github.com/en/enterprise-cloud@latest/rest/migrations/orgs).
 
 ## Quickstart
 
@@ -30,19 +20,102 @@ $ gh repo-export --help
 Bulk exports a list of Git repositories from an organization
 
 USAGE
-  gh-repo-export [options] <organization> <repo1> <repo2> ...
+  gh repo-export [flags] <organization> <repo1> <repo2> ... <repoN>
+  gh repo-export [flags] <organization> <path/to/repos file>
 
 FLAGS
-      --archive=string                Archive file (don't include the .tar.gz extension) (default: migration_archive-<migration_id>.tar.gz)
+      --archive=string                Name of archive excluding extension; default 'migration-archive-<migration_id>'
+      --archive-per-repo              Generates 1 archive per repository instead of 1 archive for all repositories
   -d, --debug                         Enable debugging
       --exclude-attachments           Indicates attachments should be excluded from the migration
       --exclude-git-data              Indicates git data should be excluded from the migration
       --exclude-metadata              Indicates metadata should be excluded from the migration
       --exclude-owner-projects        Indicates projects owned by the organization or users should be excluded from the migration
       --exclude-releases              Indicates releases should be excluded from the migration
+  -h, --help                          Display help usage
       --hostname=string               Hostname of the GitHub instance to authenticate with
-      --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data      
+      --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
+
+EXAMPLES
+  # Generate 1 archive containing test1 repository, reading repositories from arguments
+  $ gh repo-export tinyfists test1
+
+  # Generate 1 archive containing both test1 and test2 repositories, reading repositories from arguments
+  $ gh repo-export tinyfists test1 test2
+
+  # Generate 2 archives, 1 containing test1 repository and 1 containing test2 repository, reading repositories from arguments
+  $ gh repo-export --archive-per-repo tinyfists test1 test2
+
+  # Generate 2 archives, 1 containing test1 repository and 1 containing test2 repository, reading repositories from 'repos.txt' file
+  $ gh repo-export --archive-per-repo tinyfists repos.txt
 ```
+
+### Examples
+
+<details><summary><b><code>$ gh repo-export tinyfists issue-driven-github-admin</code></b></summary>
+<p>
+
+```shell
+Reading repositories from arguments: issue-driven-github-admin
+Starting migration 3431913 for repositories: issue-driven-github-admin
+Watching migration 3431913 with 'exporting' state
+Watching migration 3431913 with 'exporting' state
+Watching migration 3431913 with 'exporting' state
+Watching migration 3431913 with 'exported' state
+Downloading migration 3431913 archive to migration-archive-3431913.tar.gz
+```
+</p>
+</details>
+
+<details><summary><b><code>$ gh repo-export tinyfists issue-driven-github-admin actions-experiments</code></b></summary>
+<p>
+
+```shell
+Reading repositories from arguments: issue-driven-github-admin actions-experiments
+Starting migration 3431922 for repositories: issue-driven-github-admin actions-experiments
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exported' state
+Downloading migration 3431922 archive to migration-archive-3431922.tar.gz
+```
+</p>
+</details>
+
+<details><summary><b><code>$ gh repo-export --archive-per-repo tinyfists issue-driven-github-admin actions-experiments</code></b></summary>
+<p>
+
+```shell
+Reading repositories from arguments: issue-driven-github-admin actions-experiments
+Starting migration 3431937 for repositories: issue-driven-github-admin
+Starting migration 3431938 for repositories: actions-experiments
+Watching migration 3431937 with 'exporting' state
+Watching migration 3431938 with 'exporting' state
+Watching migration 3431937 with 'exporting' state
+Watching migration 3431938 with 'exported' state
+Watching migration 3431937 with 'exporting' state
+Watching migration 3431937 with 'exported' state
+Downloading migration 3431937 archive to migration-archive-3431937.tar.gz
+Downloading migration 3431938 archive to migration-archive-3431938.tar.gz
+```
+</p>
+</details>
+
+<details><summary><b><code>$ gh repo-export tinyfists repos.txt</code></b></summary>
+<p>
+
+```shell
+Reading repositories from file: repos.txt
+Starting migration 3431982 for repositories:  issue-driven-github-admin actions-experiments
+Watching migration 3431982 with 'exporting' state
+Watching migration 3431982 with 'exporting' state
+Watching migration 3431982 with 'exporting' state
+Watching migration 3431982 with 'exported' state
+Downloading migration 3431982 archive to migration-archive-3431982.tar.gz
+```
+</p>
+</details>
 
 ## Setup
 
