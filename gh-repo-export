@@ -127,13 +127,13 @@ MIGRATION_INPUTS=$(
     --argjson lock_repositories $LOCK_REPOSITORIES \
     --args $REPOSITORIES)
 
-MIGRATION_ID=$(echo "$MIGRATION_INPUTS" | gh api /orgs/$ORGANIZATION/migrations -X POST -p wyandotte --input - --jq '.id')
+MIGRATION_ID=$(echo "$MIGRATION_INPUTS" | gh api "orgs/$ORGANIZATION/migrations" -X POST -p wyandotte --input - --jq '.id')
 
 # Send request to the migration starts endpoint to monitor the status of the export
 # https://docs.github.com/en/rest/reference/migrations#get-an-organization-migration-status
 
 while true; do
-  MIGRATION_STATE=$(gh api /orgs/$ORGANIZATION/migrations/$MIGRATION_ID -p wyandotte --jq '.state')
+  MIGRATION_STATE=$(gh api "orgs/$ORGANIZATION/migrations/$MIGRATION_ID" -p wyandotte --jq '.state')
   printf "Monitoring migration %s state:  %s\n" $MIGRATION_ID $MIGRATION_STATE
 
   if [[ "${MIGRATION_STATE}" == "exported" ]]; then
@@ -151,4 +151,4 @@ done
 # https://docs.github.com/en/rest/reference/migrations#download-an-organization-migration-archive
 MIGRATION_FILE=${ARCHIVE:-migration_archive-$MIGRATION_ID}.tar.gz
 printf "Downloading migration %s archive to %s\n" $MIGRATION_ID $MIGRATION_FILE
-gh api /orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive -p wyandotte > $MIGRATION_FILE
+gh api "orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive" -p wyandotte > $MIGRATION_FILE
