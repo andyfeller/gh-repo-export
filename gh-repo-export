@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2213,SC2214,SC2155
 set -e
 
 ARCHIVE=
@@ -110,6 +111,10 @@ while getopts "dh-:" OPT; do
     lock-repositories)
       LOCK_REPOSITORIES=true
       ;;
+
+    *)
+      die "Unknown flag '$OPT'"
+      ;;
   esac
 done
 
@@ -122,27 +127,28 @@ fi
 
 # Process arguments for organization and repository information
 ORGANIZATION="$1"
+declare -a REPOSITORIES
 
 if [[ "$#" -eq 2 && -f "$2" ]]; then
   # If argument is valid file, read repositories from file
-  REPOSITORIES=
   REPOSITORIES_FILE="$2"
   printf "Reading repositories from file: %s\n" "$REPOSITORIES_FILE"
 
   while IFS= read -r REPOSITORY; do
-    REPOSITORIES="$REPOSITORIES $REPOSITORY"
+    REPOSITORIES+=("$REPOSITORY")
   done < "$REPOSITORIES_FILE"
 else
   # Otherwise, assume arguments are repositories
-  REPOSITORIES=${@:2}
-  printf "Reading repositories from arguments: %s\n" "$REPOSITORIES"
+  REPOSITORIES=("${@:2}")
+  printf "Reading repositories from arguments: %s\n" "${REPOSITORIES[*]}"
 fi
 
 # Start migration of specified GitHub repositories
 declare -a MIGRATIONS
 
 start_migration() {
-  local REPOSITORIES="$1"
+  local REPOSITORIES=("$@")
+  # shellcheck disable=SC2016
   local MIGRATION_JQ='{
     "lock_repositories": $lock_repositories,
     "exclude_attachments": $exclude_attachments,
@@ -155,26 +161,26 @@ start_migration() {
 
   local MIGRATION_INPUTS=$(
     jq -n "$MIGRATION_JQ" \
-      --argjson exclude_attachments $EXCLUDE_ATTACHMENTS \
-      --argjson exclude_git_data $EXCLUDE_GIT_DATA \
-      --argjson exclude_metadata $EXCLUDE_METADATA \
-      --argjson exclude_owner_projects $EXCLUDE_OWNER_PROJECTS \
-      --argjson exclude_releases $EXCLUDE_RELEASES \
-      --argjson lock_repositories $LOCK_REPOSITORIES \
-      --args $REPOSITORIES)
+      --argjson exclude_attachments "$EXCLUDE_ATTACHMENTS" \
+      --argjson exclude_git_data "$EXCLUDE_GIT_DATA" \
+      --argjson exclude_metadata "$EXCLUDE_METADATA" \
+      --argjson exclude_owner_projects "$EXCLUDE_OWNER_PROJECTS" \
+      --argjson exclude_releases "$EXCLUDE_RELEASES" \
+      --argjson lock_repositories "$LOCK_REPOSITORIES" \
+      --args "${REPOSITORIES[@]}")
 
 
-  local MIGRATION_ID=$(echo "$MIGRATION_INPUTS" | gh api /orgs/$ORGANIZATION/migrations -X POST -p wyandotte --input - --jq '.id')
-  printf "Starting migration %s for repositories: %s\n" "$MIGRATION_ID" "$REPOSITORIES"
+  local MIGRATION_ID=$(echo "$MIGRATION_INPUTS" | gh api "/orgs/$ORGANIZATION/migrations" -X POST -p wyandotte --input - --jq '.id')
+  printf "Starting migration %s for repositories: %s\n" "$MIGRATION_ID" "${REPOSITORIES[*]}"
   MIGRATIONS[$MIGRATION_ID]="pending"
 }
 
 if $ARCHIVE_PER_REPO; then
-  for REPOSITORY in $REPOSITORIES; do
-    start_migration $REPOSITORY
+  for REPOSITORY in "${REPOSITORIES[@]}"; do
+    start_migration "$REPOSITORY"
   done
 else
-  start_migration "$REPOSITORIES"
+  start_migration "${REPOSITORIES[@]}"
 fi
 
 # Watch migrations that are waiting to run or complete, sleeping periodically to give them time and avoid rate limiting
@@ -192,8 +198,8 @@ while $MIGRATION_WATCH; do
 
   for MIGRATION_ID in "${!MIGRATIONS[@]}"; do
     if is_waiting $MIGRATION_ID; then
-      MIGRATIONS[$MIGRATION_ID]=$(gh api /orgs/$ORGANIZATION/migrations/$MIGRATION_ID -p wyandotte --jq '.state')
-      printf "Watching migration %s with '%s' state\n" $MIGRATION_ID "${MIGRATIONS[$MIGRATION_ID]}"
+      MIGRATIONS[$MIGRATION_ID]=$(gh api "/orgs/$ORGANIZATION/migrations/$MIGRATION_ID" -p wyandotte --jq '.state')
+      printf "Watching migration %s with '%s' state\n" "$MIGRATION_ID" "${MIGRATIONS[$MIGRATION_ID]}"
 
       if is_waiting $MIGRATION_ID; then
         MIGRATION_WATCH=true
@@ -216,17 +222,17 @@ download_migration() {
   local MIGRATION_STATE="${MIGRATIONS[$MIGRATION_ID]}"
 
   if [[ "$MIGRATION_STATE" == "exported" ]]; then
-    printf "Downloading migration %s archive to %s\n" $MIGRATION_ID $MIGRATION_FILE
-    gh api /orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive -p wyandotte > $MIGRATION_FILE
+    printf "Downloading migration %s archive to %s\n" "$MIGRATION_ID" "$MIGRATION_FILE"
+    gh api "/orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive" -p wyandotte > "$MIGRATION_FILE"
   else
-    printf "Skipping migration %s due to '%s' state; please investigate\n" $MIGRATION_ID $MIGRATION_STATE
+    printf "Skipping migration %s due to '%s' state; please investigate\n" "$MIGRATION_ID" "$MIGRATION_STATE"
   fi
 }
 
 for MIGRATION_ID in "${!MIGRATIONS[@]}"; do
   if $ARCHIVE_PER_REPO; then
-    download_migration $MIGRATION_ID "${ARCHIVE:-migration-archive}-$MIGRATION_ID.tar.gz"
+    download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive}-$MIGRATION_ID.tar.gz"
   else
-    download_migration $MIGRATION_ID "${ARCHIVE:-migration-archive-$MIGRATION_ID}.tar.gz"
+    download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive-$MIGRATION_ID}.tar.gz"
   fi
 done
