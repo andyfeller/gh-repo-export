@@ -1,0 +1,22 @@
+name: Pull request
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  extension:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout changes under review
+        uses: actions/checkout@v3
+
+      - name: Lint shell scripts
+        if: ${{ always() }}
+        uses: ludeeus/action-shellcheck@2.0.0
+
+      - name: Lint actions
+        if: ${{ always() }}
+        uses: devops-actions/actionlint@v0.1.2
+
+# vim: set expandtab ts=2 sw=2:
