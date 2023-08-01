@@ -60,10 +60,10 @@ if ! type -p jq > /dev/null; then
 fi
 
 while getopts "dh-:" OPT; do
-  if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
-    OPT="${OPTARG%%=*}"       # extract long option name
-    OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
-    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+  if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
+    OPT="${OPTARG%%=*}"         # extract long option name
+    OPTARG="${OPTARG#"$OPT"}"   # extract long option argument (may be empty)
+    OPTARG="${OPTARG#=}"        # if long option argument, remove assigning `=`
   fi
 
   case "$OPT" in
@@ -197,11 +197,11 @@ while $MIGRATION_WATCH; do
   MIGRATION_WATCH=false
 
   for MIGRATION_ID in "${!MIGRATIONS[@]}"; do
-    if is_waiting $MIGRATION_ID; then
+    if is_waiting "$MIGRATION_ID"; then
       MIGRATIONS[$MIGRATION_ID]=$(gh api "/orgs/$ORGANIZATION/migrations/$MIGRATION_ID" -p wyandotte --jq '.state')
       printf "Watching migration %s with '%s' state\n" "$MIGRATION_ID" "${MIGRATIONS[$MIGRATION_ID]}"
 
-      if is_waiting $MIGRATION_ID; then
+      if is_waiting "$MIGRATION_ID"; then
         MIGRATION_WATCH=true
       fi
     fi
