@@ -139,7 +139,7 @@ else
 fi
 
 # Start migration of specified GitHub repositories
-declare -A MIGRATIONS
+declare -a MIGRATIONS
 
 start_migration() {
   local REPOSITORIES="$1"
