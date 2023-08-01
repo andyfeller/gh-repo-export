@@ -172,6 +172,7 @@ start_migration() {
 
   local MIGRATION_ID=$(echo "$MIGRATION_INPUTS" | gh api "/orgs/$ORGANIZATION/migrations" -X POST -p wyandotte --input - --jq '.id')
   printf "Starting migration %s for repositories: %s\n" "$MIGRATION_ID" "${REPOSITORIES[*]}"
+  # shellcheck disable=SC2004
   MIGRATIONS[$MIGRATION_ID]="pending"
 }
 
@@ -198,6 +199,7 @@ while $MIGRATION_WATCH; do
 
   for MIGRATION_ID in "${!MIGRATIONS[@]}"; do
     if is_waiting "$MIGRATION_ID"; then
+      # shellcheck disable=SC2004
       MIGRATIONS[$MIGRATION_ID]=$(gh api "/orgs/$ORGANIZATION/migrations/$MIGRATION_ID" -p wyandotte --jq '.state')
       printf "Watching migration %s with '%s' state\n" "$MIGRATION_ID" "${MIGRATIONS[$MIGRATION_ID]}"
 
