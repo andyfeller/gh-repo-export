@@ -35,6 +35,7 @@ FLAGS
   -h, --help                          Display help usage
       --hostname=string               Hostname of the GitHub instance to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
+      --skip-download                 Skip downloading the archive(s), instead outputting the URL(s) to stdout (curl and sed required)
 
 EXAMPLES
   # Generate 1 archive containing test1 repository, reading repositories from arguments
@@ -42,6 +43,9 @@ EXAMPLES
 
   # Generate 1 archive containing both test1 and test2 repositories, reading repositories from arguments
   $ gh repo-export tinyfists test1 test2
+
+  # Generate 1 archive containing both test1 and test2 repositories, reading repositories from arguments, and output the archive URL instead of downloading
+  $ gh repo-export --skip-download tinyfists test1 test2
 
   # Generate 2 archives, 1 containing test1 repository and 1 containing test2 repository, reading repositories from arguments
   $ gh repo-export --archive-per-repo tinyfists test1 test2
@@ -79,6 +83,22 @@ Watching migration 3431922 with 'exporting' state
 Watching migration 3431922 with 'exporting' state
 Watching migration 3431922 with 'exported' state
 Downloading migration 3431922 archive to migration-archive-3431922.tar.gz
+```
+</p>
+</details>
+
+<details><summary><b><code>$ gh repo-export --skip-download tinyfists issue-driven-github-admin actions-experiments</code></b></summary>
+<p>
+
+```shell
+Reading repositories from arguments: issue-driven-github-admin actions-experiments
+Starting migration 3431922 for repositories: issue-driven-github-admin actions-experiments
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exporting' state
+Watching migration 3431922 with 'exported' state
+Archive URL for migration 3762306: https://github-cloud.s3.amazonaws.com/migration/...
 ```
 </p>
 </details>

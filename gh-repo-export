@@ -10,6 +10,7 @@ EXCLUDE_METADATA=false
 EXCLUDE_OWNER_PROJECTS=false
 EXCLUDE_RELEASES=false
 LOCK_REPOSITORIES=false
+SKIP_DOWNLOAD=false
 
 __USAGE="
 Bulk exports a list of Git repositories from an organization
@@ -30,6 +31,7 @@ FLAGS
   -h, --help                          Display help usage
       --hostname=string               Hostname of the GitHub instance to authenticate with
       --lock-repositories             Indicates repositories should be locked (to prevent manipulation) while migrating data
+      --skip-download                 Skip downloading the archive(s), instead outputting the URL(s) to stdout (curl and sed required)
 
 EXAMPLES
   # Generate 1 archive containing test1 repository, reading repositories from arguments
@@ -37,6 +39,9 @@ EXAMPLES
 
   # Generate 1 archive containing both test1 and test2 repositories, reading repositories from arguments
   $ gh repo-export tinyfists test1 test2
+
+  # Generate 1 archive containing both test1 and test2 repositories, reading repositories from arguments, and output the archive URL instead of downloading
+  $ gh repo-export --skip-download tinyfists test1 test2
 
   # Generate 2 archives, 1 containing test1 repository and 1 containing test2 repository, reading repositories from arguments
   $ gh repo-export --archive-per-repo tinyfists test1 test2
@@ -112,6 +117,10 @@ while getopts "dh-:" OPT; do
       LOCK_REPOSITORIES=true
       ;;
 
+    skip-download)
+      SKIP_DOWNLOAD=true
+      ;;
+
     *)
       die "Unknown flag '$OPT'"
       ;;
@@ -176,6 +185,22 @@ start_migration() {
   MIGRATIONS[$MIGRATION_ID]="pending"
 }
 
+if $SKIP_DOWNLOAD; then
+  if ! type -p curl >/dev/null; then
+    die "'curl' is required for --skip-download option and could not be found"
+  fi
+
+  if ! type -p sed >/dev/null; then
+    die "'sed' is required for --skip-download option and could not be found"
+  fi
+
+  if [[ $ARCHIVE != "" ]]; then
+    die "--archive cannot be used with --skip-download"
+  fi
+
+  TOKEN=$(gh auth token)
+fi
+
 if $ARCHIVE_PER_REPO; then
   for REPOSITORY in "${REPOSITORIES[@]}"; do
     start_migration "$REPOSITORY"
@@ -231,10 +256,36 @@ download_migration() {
   fi
 }
 
-for MIGRATION_ID in "${!MIGRATIONS[@]}"; do
-  if $ARCHIVE_PER_REPO; then
-    download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive}-$MIGRATION_ID.tar.gz"
+print_archive_url() {
+  local MIGRATION_ID="$1"
+  local MIGRATION_STATE="${MIGRATIONS[$MIGRATION_ID]}"
+
+  if [[ $GH_HOST != "" ]]; then
+    if [[ "$GH_HOST" == "github.com" ]]; then
+      BASE_URL="https://api.github.com"
+    else
+      BASE_URL="https://$GH_HOST/api/v3"
+    fi
   else
-    download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive-$MIGRATION_ID}.tar.gz"
+    BASE_URL="https://api.github.com"
+  fi
+
+  if [[ "$MIGRATION_STATE" == "exported" ]]; then
+    local ARCHIVE_URL=$(curl -s -I -H "Authorization: bearer $TOKEN" "$BASE_URL/orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive" | tr -d '\r' | sed -En 's/^location: (.*)/\1/p')
+    printf "Archive URL for migration %s: %s\n" "$MIGRATION_ID" "$ARCHIVE_URL"
+  else
+    printf "Skipping migration %s due to '%s' state; please investigate\n" "$MIGRATION_ID" "$MIGRATION_STATE"
+  fi
+}
+
+for MIGRATION_ID in "${!MIGRATIONS[@]}"; do
+  if $SKIP_DOWNLOAD; then
+    print_archive_url "$MIGRATION_ID"
+  else
+    if $ARCHIVE_PER_REPO; then
+      download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive}-$MIGRATION_ID.tar.gz"
+    else
+      download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive-$MIGRATION_ID}.tar.gz"
+    fi
   fi
 done
