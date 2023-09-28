@@ -197,8 +197,6 @@ if $SKIP_DOWNLOAD; then
   if [[ $ARCHIVE != "" ]]; then
     die "--archive cannot be used with --skip-download"
   fi
-
-  TOKEN=$(gh auth token)
 fi
 
 if $ARCHIVE_PER_REPO; then
@@ -270,8 +268,10 @@ print_archive_url() {
     BASE_URL="https://api.github.com"
   fi
 
+  local TOKEN=$(gh auth token)
+
   if [[ "$MIGRATION_STATE" == "exported" ]]; then
-    local ARCHIVE_URL=$(curl -s -I -H "Authorization: bearer $TOKEN" "$BASE_URL/orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive" | tr -d '\r' | sed -En 's/^location: (.*)/\1/p')
+    local ARCHIVE_URL=$(curl -l --no-progress-meter -H "Authorization: bearer $TOKEN" "$BASE_URL/orgs/$ORGANIZATION/migrations/$MIGRATION_ID/archive")
     printf "Archive URL for migration %s: %s\n" "$MIGRATION_ID" "$ARCHIVE_URL"
   else
     printf "Skipping migration %s due to '%s' state; please investigate\n" "$MIGRATION_ID" "$MIGRATION_STATE"
@@ -281,11 +281,9 @@ print_archive_url() {
 for MIGRATION_ID in "${!MIGRATIONS[@]}"; do
   if $SKIP_DOWNLOAD; then
     print_archive_url "$MIGRATION_ID"
+  elif $ARCHIVE_PER_REPO; then
+    download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive}-$MIGRATION_ID.tar.gz"
   else
-    if $ARCHIVE_PER_REPO; then
-      download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive}-$MIGRATION_ID.tar.gz"
-    else
-      download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive-$MIGRATION_ID}.tar.gz"
-    fi
+    download_migration "$MIGRATION_ID" "${ARCHIVE:-migration-archive-$MIGRATION_ID}.tar.gz"
   fi
 done
