@@ -1,6 +1,6 @@
 # gh-repo-export
 
-A `gh` extension to generate [GitHub organization repository migrations](https://docs.github.com/en/enterprise-cloud@latest/rest/migrations/orgs).
+A test fork of the `gh` extension to generate [GitHub organization repository migrations](https://docs.github.com/en/enterprise-cloud@latest/rest/migrations/orgs).
 
 ## Quickstart
 
